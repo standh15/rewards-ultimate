@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rewards Ultimate</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080e1d;color:#fff;font-family:Arial,sans-serif}
+header{padding:22px 6%;background:#101a30;border-bottom:1px solid #263653;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.brand{font-size:22px;font-weight:bold}
+.brand span{color:#ffc94d}
+main{max-width:1050px;margin:auto;padding:25px 18px}
+h1{font-size:32px}
+p,.muted{color:#a8b6d0}
+.card{background:#131e35;border:1px solid #293956;border-radius:17px;padding:22px;margin:15px 0}
+.balance{font-size:clamp(30px,7vw,52px);font-weight:bold;color:#ffc94d;overflow-wrap:anywhere;margin:15px 0}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.stat{background:#202d49;border-radius:12px;padding:18px}
+.stat strong{font-size:25px;display:block;margin-top:8px}
+input{width:100%;padding:13px;margin:8px 0;background:#0b1429;border:1px solid #3b4d6c;border-radius:9px;color:white;font-size:16px}
+button,.link{padding:13px 18px;border:0;border-radius:9px;background:#1689ef;color:white;font-weight:bold;cursor:pointer;display:inline-block;text-decoration:none;margin-top:7px}
+.gold{background:#e5a91b;color:#17120a}
+.secondary{background:#344461}
+button:hover,.link:hover{filter:brightness(1.15)}
+.progress{height:13px;background:#303e59;border-radius:20px;overflow:hidden;margin:15px 0}
+#bar{height:100%;width:0;background:linear-gradient(90deg,#e7a91e,#ffe18b);transition:width .4s}
+li{padding:11px 0;border-bottom:1px solid #34415a}
+small{color:#9eacc7}
+footer{text-align:center;color:#8190aa;padding:25px;font-size:12px}
+@media(max-width:550px){.grid{grid-template-columns:1fr}header{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand">🏆 REWARDS <span>ULTIMATE</span></div>
+ <small>YOUR REWARDS CENTER</small>
+</header>
+<main>
+ <h1>Welkom terug! 👋</h1>
+ <p>Jouw persoonlijke Rewards-dashboard.</p>
+
+ <section class="card">
+  <small>JOUW HUIDIGE PUNTENSALDO</small>
+  <div class="balance" id="balance">0 punten</div>
+  <input id="newBalance" type="number" min="0" placeholder="Vul je echte Microsoft saldo in">
+  <button onclick="updateBalance()">Saldo bijwerken</button>
+ </section>
+
+ <div class="grid">
+  <div class="stat"><small>Deze maand verdiend</small><strong id="month">0</strong></div>
+  <div class="stat"><small>Aantal activiteiten</small><strong id="activities">0</strong></div>
+ </div>
+
+ <section class="card">
+  <h2>🎯 Mijn spaardoel</h2>
+  <input id="goal" type="number" min="1" placeholder="Spaardoel in punten">
+  <button class="secondary" onclick="updateGoal()">Doel instellen</button>
+  <div class="progress"><div id="bar"></div></div>
+  <p id="progressText">Stel een spaardoel in.</p>
+ </section>
+
+ <section class="card">
+  <h2>➕ Punten toevoegen</h2>
+  <input id="points" type="number" min="1" placeholder="Aantal punten">
+  <input id="reason" placeholder="Omschrijving">
+  <button class="gold" onclick="addPoints()">+ Registreren</button>
+ </section>
+
+ <section class="card">
+  <h2>📅 Dagelijkse activiteiten</h2>
+  <p>Houd bij welke Rewards-activiteiten je hebt gedaan.</p>
+  <div id="tasks"></div>
+ </section>
+
+ <section class="card">
+  <h2>📜 Activiteitenhistorie</h2>
+  <ul id="history"><li>Nog geen activiteiten.</li></ul>
+  <button class="secondary" onclick="clearHistory()">Geschiedenis wissen</button>
+ </section>
+
+ <section class="card">
+  <h2>🎁 Microsoft Rewards</h2>
+  <p>Bekijk je officiële punten, dagelijkse opdrachten en beschikbare beloningen.</p>
+  <a class="link" href="https://rewards.bing.com/" target="_blank" rel="noopener">Open Microsoft Rewards ↗</a>
+  <a class="link secondary" href="https://www.microsoft.com/rewards" target="_blank" rel="noopener">Rewards informatie ↗</a>
+ </section>
+</main>
+<footer>
+Rewards Ultimate · Onafhankelijke persoonlijke tracker.
+Geen officiële Microsoft-website. Puntenregistratie is lokaal.
+</footer>
+<script>
+const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const store=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+let balance=read('ru_balance',0);
+let goal=read('ru_goal',0);
+let history=read('ru_history',[]);
+let done=read('ru_done',[]);
+const tasks=['Microsoft Rewards-dashboard bekijken','Bing zoeken','Dagelijkse Rewards-opdracht controleren'];
+
+function safe(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function render(){
+ document.getElementById('balance').textContent=balance.toLocaleString('nl-NL')+' punten';
+ document.getElementById('activities').textContent=history.length;
+ const month=new Date().getMonth();
+ const year=new Date().getFullYear();
+ const earned=history.filter(x=>{let d=new Date(x.date);return d.getMonth()===month&&d.getFullYear()===year}).reduce((a,x)=>a+x.points,0);
+ document.getElementById('month').textContent=earned.toLocaleString('nl-NL');
+ let pct=goal>0?Math.min(100,balance/goal*100):0;
+ document.getElementById('bar').style.width=pct+'%';
+ document.getElementById('progressText').textContent=goal?balance.toLocaleString('nl-NL')+' / '+goal.toLocaleString('nl-NL')+' punten ('+pct.toFixed(1)+'%)':'Stel een spaardoel in.';
+ document.getElementById('history').innerHTML=history.length?history.map(x=>'<li><b>+'+x.points.toLocaleString('nl-NL')+' punten</b><br><small>'+safe(x.reason)+' · '+safe(x.date)+'</small></li>').join(''):'<li>Nog geen activiteiten.</li>';
+ document.getElementById('tasks').innerHTML=tasks.map((t,i)=>'<label style="display:block;padding:12px 0"><input style="width:auto" type="checkbox" '+(done.includes(i)?'checked':'')+' onchange="toggleTask('+i+',this.checked)"> '+t+'</label>').join('');
+}
+function updateBalance(){
+ let n=document.getElementById('newBalance').value;
+ if(n===''||!Number.isSafeInteger(Number(n))||Number(n)<0)return alert('Vul een geldig saldo in.');
+ balance=Number(n);store('ru_balance',balance);render();
+ document.getElementById('newBalance').value='';
+}
+function updateGoal(){
+ let n=document.getElementById('goal').value;
+ if(n===''||!Number.isSafeInteger(Number(n))||Number(n)<=0)return alert('Vul een geldig doel in.');
+ goal=Number(n);store('ru_goal',goal);render();
+}
+function addPoints(){
+ let n=Number(document.getElementById('points').value);
+ let r=document.getElementById('reason').value.trim();
+ if(!Number.isSafeInteger(n)||n<=0||!r)return alert('Vul een geldig aantal en omschrijving in.');
+ if(!Number.isSafeInteger(balance+n))return alert('Saldo is te groot.');
+ balance+=n;
+ history.unshift({points:n,reason:r,date:new Date().toLocaleDateString('nl-NL')});
+ store('ru_balance',balance);store('ru_history',history);
+ document.getElementById('points').value='';
+ document.getElementById('reason').value='';
+ render();
+}
+function toggleTask(i,v){
+ done=v?[...new Set([...done,i])]:done.filter(x=>x!==i);
+ store('ru_done',done);
+}
+function clearHistory(){
+ if(confirm('Geschiedenis echt wissen?')){
+ history=[];store('ru_history',history);render();
+ }
+}
+render();
+</script>
+</body>
+</html>
